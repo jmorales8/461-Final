@@ -159,7 +159,12 @@ cgaputc(int c)
   outb(CRTPORT, 15);
   pos |= inb(CRTPORT+1);
 
-  if (c == '\n')
+  if (c == '\x0c') {
+    // Clear the screen on form feed so user programs can redraw from a clean
+    // buffer (for example, the "top" utility refreshing its table).
+    memset(crt, 0, sizeof(crt[0]) * 24 * 80);
+    pos = 0;
+  } else if (c == '\n')
     pos += 80 - pos%80;
   else if (c == BACKSPACE) {
     if (pos > 0) --pos;
