@@ -35,10 +35,10 @@ main(int argc, char **argv)
   struct uproc procs[MAXPROCS];
 
   while(1){
-    // Optional: clear screen for a nicer "top" feel:
-    // printf(1, "\x1b[2J\x1b[H");
-
-    printf(1, "\n\n----- xv6 top -----\n");
+    // Clear the screen and move the cursor to the top so the table
+    // is refreshed in place, similar to Linux "top".
+    printf(1, "\x1b[2J\x1b[H");
+    printf(1, "----- xv6 top -----\n");
 
     int n = getprocs(procs, MAXPROCS);
 
