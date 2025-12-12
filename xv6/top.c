@@ -55,15 +55,20 @@ print_field_int(int value, int width)
 static void
 print_header(void)
 {
-  print_field_str("PID", 5);
-  printf(1, " ");
-  print_field_str("STATE", 10);
-  printf(1, " ");
-  print_field_str("MEM(bytes)", 12);
-  printf(1, " ");
-  print_field_str("CPU(ticks)", 11);
-  printf(1, " NAME\n");
-  printf(1, "-----------------------------------------------------------\n");
+    int current_ticks = uptime(); // Call the new system call
+
+    // Display Uptime in the header
+    printf(1, "Uptime: %d ticks\n", current_ticks);
+    
+    print_field_str("PID", 5);
+    printf(1, " ");
+    print_field_str("STATE", 10);
+    printf(1, " ");
+    print_field_str("MEM(bytes)", 12);
+    printf(1, " ");
+    print_field_str("CPU(ticks)", 11);
+    printf(1, " NAME\n");
+    printf(1, "-----------------------------------------------------------\n");
 }
 
 static char *

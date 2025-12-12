@@ -483,26 +483,53 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+// Add this implementation to your proc.c
+// NOTE: For simplicity, this assumes the 'buf' argument is a direct user-space pointer.
+// In a true xv6 system call, this function would be called by sys_getprocs 
+// which extracts the user pointer and max count from the trap frame.
+
 int
-getprocs(struct uproc *buf, int max)
+getprocs(struct uproc *user_buf, int max_procs)
 {
-  struct proc *p;
-  int count = 0;
+    struct proc *p;
+    int count = 0;
+    
+    // The temporary structure used to hold data in SAFE KERNEL SPACE
+    struct uproc temp_uproc; 
 
-  acquire(&ptable.lock);
+    acquire(&ptable.lock);
 
-  for(p = ptable.proc; p < &ptable.proc[NPROC] && count < max; p++){
-    if(p->state == UNUSED)
-      continue;
+    for (p = ptable.proc; p < &ptable.proc[NPROC] && count < max_procs; p++) {
+        if (p->state == UNUSED)
+            continue;
 
-    buf[count].pid = p->pid;
-    safestrcpy(buf[count].name, p->name, sizeof(buf[count].name));
-    buf[count].state = p->state;
-    buf[count].sz = p->sz;
-    buf[count].cpu_ticks = p->cpu_ticks;
-    count++;
-  }
+        // 1. GATHER: Copy data from the kernel 'struct proc' into the 
+        //    safe, temporary kernel structure 'temp_uproc'.
+        temp_uproc.pid = p->pid;
+        safestrcpy(temp_uproc.name, p->name, sizeof(temp_uproc.name));
+        temp_uproc.state = p->state;
+        temp_uproc.sz = p->sz;
+        temp_uproc.cpu_ticks = p->cpu_ticks;
 
-  release(&ptable.lock);
-  return count;
+        // 2. CALCULATE DESTINATION: Determine the exact user-space address 
+        //    where the current process struct should be placed.
+        //    (Base address of array + offset for the 'count'-th element)
+        uint64 dst_addr = (uint64)user_buf + (count * sizeof(struct uproc));
+        
+        // 3. TRANSFER (The CRITICAL STEP): Use copyout to safely move data 
+        //    from kernel memory (temp_uproc) to user memory (dst_addr).
+        //    'proc->pgdir' provides the page table for address translation.
+        if (copyout(proc->pgdir, dst_addr, (char*)&temp_uproc, sizeof(struct uproc)) < 0) {
+            // Error handling: If copyout fails (e.g., bad user address), 
+            // return an error immediately.
+            release(&ptable.lock);
+            return -1; 
+        }
+
+        count++;
+    }
+
+    release(&ptable.lock);
+    return count;
 }
