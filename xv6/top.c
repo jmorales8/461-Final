@@ -55,11 +55,8 @@ print_field_int(int value, int width)
 static void
 print_header(void)
 {
-    int current_ticks = uptime(); // Call the new system call
-
-    // Display Uptime in the header
+    int current_ticks = uptime();
     printf(1, "Uptime: %d ticks\n", current_ticks);
-    
     print_field_str("PID", 5);
     printf(1, " ");
     print_field_str("STATE", 10);
